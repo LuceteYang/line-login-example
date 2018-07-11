@@ -1,9 +1,13 @@
 var express = require('express');
 var router = express.Router();
 const crypto = require("crypto");
+const request = require("request");
+require('dotenv').config();
 const channel_id = process.env.CHANNEL_ID;
 const callback_url = process.env.CALLBACK_URL;
 const channel_secret = process.env.CHANNEL_SECRET;
+let Promise = require("bluebird");
+Promise.promisifyAll(request);
 /* GET home page. */
 router.get('/', (req, res, next) =>{
   res.render('index', { title: 'Express', info: '' });
@@ -45,7 +49,7 @@ router.get("/callback",(req, res, next) => {
 				res.status(400).json({error:"id token verification failed."});
             }
         }
-        res.render('index', { title: 'Express', info: token_response });
+        res.render('index', { title: 'Express', info: JSON.stringify(token_response) });
     }).catch((error) => {
         console.log('line 66 ',error);
         res.status(400).json(error);

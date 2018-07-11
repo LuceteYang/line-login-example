@@ -1,9 +1,9 @@
 var express = require('express');
 var router = express.Router();
 const crypto = require("crypto");
-const channel_id = process.env.channel_id;
-const callback_url = process.env.callback_url;
-const channel_secret = process.env.channel_secret;
+const channel_id = process.env.CHANNEL_ID;
+const callback_url = process.env.CALLBACK_URL;
+const channel_secret = process.env.CHANNEL_SECRET;
 /* GET home page. */
 router.get('/', (req, res, next) =>{
   res.render('index', { title: 'Express', info: '' });
@@ -23,28 +23,21 @@ router.get("/callback",(req, res, next) => {
         console.log("Authorization failed.");
         return res.status(400).json({error:"Authorization failed."});
     }
-    if (!secure_compare(req.session.line_login_state, state)){
-        console.log("Authorization failed. State does not match.");
-        return res.status(400).json({error:"Authorization failed. State does not match."});
-    }
     console.log("Authorization succeeded.");
 
-    this.issue_access_token(code).then((token_response) => {
+    issue_access_token(code).then((token_response) => {
         if (this.verify_id_token && token_response.id_token){
             let decoded_id_token;
             try {
                 decoded_id_token = jwt.verify(
                     token_response.id_token,
-                    this.channel_secret,
+                    channel_secret,
                     {
-                        audience: this.channel_id,
+                        audience: channel_id,
                         issuer: "https://access.line.me",
                         algorithms: ["HS256"]
                     }
                 );
-                if (!secure_compare(decoded_id_token.nonce, req.session.line_login_nonce)){
-                    throw new Error("Nonce does not match.");
-                }
                 console.log("id token verification succeeded.");
                 token_response.id_token = decoded_id_token;
             } catch(exception) {
@@ -58,8 +51,8 @@ router.get("/callback",(req, res, next) => {
         res.status(400).json(error);
     });
 });
-issue_access_token(code){
-    const url = `https://api.line.me/oauth2/${api_version}/token`;
+function issue_access_token(code){
+    const url = `https://api.line.me/oauth2/v2.1/token`;
     const form = {
         grant_type: "authorization_code",
         code: code,
@@ -79,14 +72,14 @@ issue_access_token(code){
 }
 
 
-make_auth_url(){
+function make_auth_url(){
     const client_id = encodeURIComponent(channel_id);
     const redirect_uri = encodeURIComponent(callback_url);
     const scope = encodeURIComponent("profile openid");
     const bot_prompt = encodeURIComponent("normal");
     const state = crypto.randomBytes(20).toString('hex');
     const nonce = crypto.randomBytes(20).toString('hex');
-    let url = `https://access.line.me/oauth2/${api_version}/authorize?response_type=code&client_id=${client_id}&redirect_uri=${redirect_uri}&scope=${scope}&bot_prompt=${bot_prompt}&state=${state}`;
+    let url = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${client_id}&redirect_uri=${redirect_uri}&scope=${scope}&bot_prompt=${bot_prompt}&state=${state}`;
     return url
 }
 

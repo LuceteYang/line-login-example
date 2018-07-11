@@ -30,28 +30,9 @@ router.get("/callback",(req, res, next) => {
     console.log("Authorization succeeded.");
 
     issue_access_token(code).then((token_response) => {
-        if (this.verify_id_token && token_response.id_token){
-            let decoded_id_token;
-            try {
-                decoded_id_token = jwt.verify(
-                    token_response.id_token,
-                    channel_secret,
-                    {
-                        audience: channel_id,
-                        issuer: "https://access.line.me",
-                        algorithms: ["HS256"]
-                    }
-                );
-                console.log("id token verification succeeded.");
-                token_response.id_token = decoded_id_token;
-            } catch(exception) {
-                console.log('line 60 ',"id token verification failed.");
-				res.status(400).json({error:"id token verification failed."});
-            }
-        }
         res.render('index', { title: 'Express', info: JSON.stringify(token_response) });
     }).catch((error) => {
-        console.log('line 66 ',error);
+        console.log('line 54 ',error);
         res.status(400).json(error);
     });
 });
